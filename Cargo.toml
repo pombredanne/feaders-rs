@@ -1,0 +1,12 @@
+[package]
+name = "feaders"
+version = "0.2.0"
+description = "Header file searcher using libhif written in Rust"
+authors = ["Pavel Odvody <podvody@redhat.com>"]
+
+[dependencies]
+getopts = "0.2"
+walkdir = "0.1.5"
+regex = "0.1.58"
+yaml-rust = "0.3.2"
+threadpool = "1.0"
