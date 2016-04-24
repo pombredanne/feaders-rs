@@ -7,7 +7,7 @@ before_install:
  - sudo docker pull fedora:23
 
 script:
- - sudo docker run --rm=true -v `pwd`:/src/:z fedora:23 bash -c "dnf install -y llvm clang redhat-rpm-config tar file && (curl -sSf https://static.rust-lang.org/rustup.sh | sh -s -- --disable-sudo) && cd /src && cargo build"
+  - sudo docker run --rm=true -v `pwd`:/src/:z fedora:23 bash -c "dnf install -y llvm clang redhat-rpm-config tar file {check,clang,expat,glib2,gobject-introspection,librepo,libsolv,python,python3,rpm,zlib}-devel && (curl -sSf https://static.rust-lang.org/rustup.sh | sh -s -- --disable-sudo) && cd /src && cargo build"
 
 notifications:
   email: false
