@@ -247,7 +247,7 @@ fn find_packages(file: Arc<FeadersFile>, paths: &[String], searched: &mut HashSe
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let program = args[0].split("/").last().unwrap();
+    let program = args[0].split('/').last().unwrap();
 
     let settings: Settings = match load_settings("config.yaml") {
         Ok(m) => { m }
