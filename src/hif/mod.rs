@@ -1,6 +1,10 @@
+#![allow(unknown_lints, dead_code, non_camel_case_types, expl_impl_clone_on_copy, 
+         used_underscore_binding, non_snake_case, type_complexity, useless_transmute)]
+
 mod libhif;
 
 use std;
+use std::str;
 use std::ffi::{CStr, CString};
 
 pub use self::libhif::{hif_context_new, hif_state_new, hif_context_setup_sack, 
@@ -87,13 +91,9 @@ pub unsafe fn g_ptr_array_map_vector<T, F, R>(array: *mut GPtrArray, func: F) ->
 // Convert a C string to a Rust's String
 pub unsafe fn cstring_to_string(cstring: *const i8) -> String {
     let c_str: &CStr = CStr::from_ptr(cstring);
-    let buf = c_str
-                .to_bytes()
-                .iter()
-                .map(|x| *x)
-                .collect::<Vec<_>>();
+    let buf = c_str.to_bytes();
 
-    String::from_utf8(buf).unwrap()
+    str::from_utf8(buf).unwrap().to_owned()
 }
 
 //

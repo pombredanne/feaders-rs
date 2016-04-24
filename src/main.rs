@@ -19,7 +19,7 @@ use core::iter::FromIterator;
 use std::io::Read;
 use std::fs::File;
 use std::{env, io};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, mpsc};
 use std::collections::HashSet;
 
@@ -43,12 +43,14 @@ struct FeadersFile {
     headers: Vec<String>,
 }
 
+#[allow(dead_code)]
 struct Repository {
     name: String,
     version: String,
     arch: String,
 }
 
+#[allow(dead_code)]
 struct Settings {
     ignored: HashSet<String>,
     repository: Repository,
@@ -112,13 +114,6 @@ impl FeadersFile {
         }
 
         Ok(self.headers.len())
-    }
-
-    fn print_headers(&self) {
-        println!("{}", self.path);
-        for header in &self.headers {
-            println!(" - {}", header);
-        }
     }
 }
 
@@ -214,7 +209,7 @@ fn find_files(workers: usize, verbose: bool, deduplicate: bool, anchor: &Arc<Str
     rx
 }
 
-fn find_packages(file: Arc<FeadersFile>, paths: &Vec<String>, searched: &mut HashSet<String>,
+fn find_packages(file: Arc<FeadersFile>, paths: &[String], searched: &mut HashSet<String>,
                  found: &mut HashSet<String>, context: *mut HifContext) 
     -> u32 {
     let mut queries = 0;
@@ -287,7 +282,9 @@ fn main() {
 
     let dedup = matches.opt_present("d");
     let verbose = matches.opt_present("v");
-    if !matches.free.is_empty() {
+    if matches.free.is_empty() {
+        usage(-1, &program, &opts);
+    } else {
         let path = Arc::new(matches.free[0].clone());
         let mut items = match FileSearcher::search(&path) {
             Ok(d) => d,
@@ -300,21 +297,16 @@ fn main() {
 
         let mut found = HashSet::new();
         let mut searched = HashSet::new();
-        let rx = find_files(16, verbose, dedup, &path, &filters, &mut items);
         let mut queries = 0;
-        loop {
-            match rx.recv() {
-                Ok(i) =>  {
-                    queries += find_packages(i, &settings.paths, &mut searched, 
-                                             &mut found, hif_context);
-                }
-                Err(_) => { break },
-            };
+        let rx = find_files(16, verbose, dedup, &path, &filters, &mut items);
+
+        while let Ok(i) = rx.recv() {
+            queries += find_packages(i, &settings.paths, &mut searched, 
+                                     &mut found, hif_context);
         }
+
         if verbose {
             println!("{} queries executed", queries);
         }
-    } else {
-        usage(-1, &program, &opts);
     }
 }

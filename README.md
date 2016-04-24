@@ -1,4 +1,6 @@
 # feaders-rs
+[![Clippy Linting Result](https://clippy.bashy.io/github/shaded-enmity/feaders-rs/master/badge.svg)](https://clippy.bashy.io/github/shaded-enmity/feaders-rs/master/log)
+
 Reimplementation of the [Feaders](https://github.com/shaded-enmity/feaders) project in Rust.
 
 # Usage

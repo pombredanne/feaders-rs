@@ -11,9 +11,7 @@ impl AbsolutePath for Path {
         let mut absolute_path = std::env::current_dir().unwrap();
         absolute_path.push(self);
 
-        if !canonicalize {
-            absolute_path
-        } else {
+        if canonicalize {
             let mut buf = PathBuf::new();
 
             for c in absolute_path.components() {
@@ -29,6 +27,8 @@ impl AbsolutePath for Path {
             }
 
             buf
+        } else {
+            absolute_path
         }
     }
 }
