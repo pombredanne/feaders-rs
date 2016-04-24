@@ -37,3 +37,6 @@ Aside from being written in Rust instead of Python, `feaders-rs` takes a differe
 
 # Notes
 I've used this project to actually learn Rust on the go, if you catch a silly mistake or just "bad Rust" please open an issue or send a pull request.
+
+# License
+GPL-3.0
