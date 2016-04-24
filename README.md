@@ -1,5 +1,5 @@
 # feaders-rs
-[![Clippy Linting Result](https://clippy.bashy.io/github/shaded-enmity/feaders-rs/master/badge.svg)](https://clippy.bashy.io/github/shaded-enmity/feaders-rs/master/log)
+[![Clippy Linting Result](https://clippy.bashy.io/github/shaded-enmity/feaders-rs/master/badge.svg)](https://clippy.bashy.io/github/shaded-enmity/feaders-rs/master/log) [![Crates.io](https://img.shields.io/crates/v/feaders.svg?maxAge=2592000)](Cargo.toml) [![Crates.io](https://img.shields.io/crates/l/feaders.svg?maxAge=2592000)](LICENSE) [![GitHub issues](https://img.shields.io/github/issues/shaded-enmity/feaders-rs.svg)](https://github.com/shaded-enmity/feaders-rs/issues)
 
 Reimplementation of the [Feaders](https://github.com/shaded-enmity/feaders) project in Rust.
 
