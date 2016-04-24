@@ -1,23 +1,13 @@
-language: rust
-rust:
-  - nightly
-  - stable
-
 sudo: required
 
 services:
-  - docker
+ - docker
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get upgrade lxc-docker
-  - echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
-  - sudo service docker restart
-  - sleep 5
-  - sudo docker pull fedora:23
+ - sudo docker pull fedora:23
 
 script:
- - sudo docker run --rm=true -v `pwd`:/src/ fedora:23 bash -c "cd /src && cargo build"
+  - sudo docker run --rm=true -v `pwd`:/src/:z fedora:23 bash -c "dnf install -y redhat-rpm-config tar file && (curl -sSf https://static.rust-lang.org/rustup.sh | sh -s -- --disable-sudo) && cd /src && cargo build"
 
 notifications:
   email: false
