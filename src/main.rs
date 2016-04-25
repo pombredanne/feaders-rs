@@ -163,11 +163,12 @@ fn load_settings(file: &str) -> IoResult<Settings> {
 
     let docs = YamlLoader::load_from_str(&s).unwrap();
     let doc = &docs[0];
-    let mut ignored: HashSet<String> = HashSet::new();
 
-    for val in doc["glibc"].as_vec().unwrap() {
-        ignored.insert(unwrap_string(&val));
-    }
+    let ignored: HashSet<String> = doc["glibc"].as_vec()
+                                    .unwrap()
+                                    .iter()
+                                    .map(|x| unwrap_string(x))
+                                    .collect::<HashSet<_>>();
 
     let paths = doc["paths"].as_vec()
                  .unwrap()
