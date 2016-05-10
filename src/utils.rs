@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 
 pub trait AbsolutePath {
     fn absolute_path(&self, canonicalize: bool) -> PathBuf;
-    fn canonical_path(&self) -> PathBuf { self.absolute_path(true) }
+    fn canonical_path(&self) -> PathBuf {
+        self.absolute_path(true)
+    }
 }
 
 impl AbsolutePath for Path {
@@ -18,7 +20,7 @@ impl AbsolutePath for Path {
                 let strref = c.as_ref();
 
                 if strref == "." {
-                    continue
+                    continue;
                 } else if strref == ".." {
                     buf.pop();
                 } else {
@@ -32,4 +34,3 @@ impl AbsolutePath for Path {
         }
     }
 }
-

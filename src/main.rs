@@ -67,16 +67,25 @@ struct FileSearcher;
 
 impl FeadersFile {
     fn new(path: &str) -> FeadersFile {
-        FeadersFile { path: path.to_string(), headers: Vec::new() }
+        FeadersFile {
+            path: path.to_string(),
+            headers: Vec::new(),
+        }
     }
 
-    fn process(&mut self, verbose: bool, dedup: bool, anchor: &str, filters: &ImportPathFilters) -> IoResult<usize> {
+    fn process(&mut self,
+               verbose: bool,
+               dedup: bool,
+               anchor: &str,
+               filters: &ImportPathFilters)
+               -> IoResult<usize> {
         if verbose {
             println!("processing: {}", self.path);
         }
 
         let path_anchor = Path::new(anchor).canonical_path();
-        let include_matcher: Regex = Regex::new(r#"(?m:^\s*#\s*include\s*[<"]+(.*?)[>"]+)"#).unwrap();
+        let include_matcher: Regex = Regex::new(r#"(?m:^\s*#\s*include\s*[<"]+(.*?)[>"]+)"#)
+                                         .unwrap();
 
         let mut f = try!(File::open(&self.path));
         let mut s = String::new();
@@ -119,8 +128,10 @@ impl FeadersFile {
 
 impl FileSearcher {
     fn search(path: &str) -> IoResult<Vec<Arc<FeadersFile>>> {
-        let suffixes: Vec<Regex> = vec![Regex::new(r"^.*\.h$").unwrap(), Regex::new(r"^.*\.c$").unwrap(), 
-                                        Regex::new(r"^.*\.hpp$").unwrap(), Regex::new(r"^.*\.cc$").unwrap(), 
+        let suffixes: Vec<Regex> = vec![Regex::new(r"^.*\.h$").unwrap(),
+                                        Regex::new(r"^.*\.c$").unwrap(),
+                                        Regex::new(r"^.*\.hpp$").unwrap(),
+                                        Regex::new(r"^.*\.cc$").unwrap(),
                                         Regex::new(r"^.*\.cpp$").unwrap()];
 
         let mut files: Vec<Arc<FeadersFile>> = Vec::new();
@@ -132,7 +143,7 @@ impl FileSearcher {
                 if suffix.is_match(file) {
                     let abs = Path::new(file).canonical_path();
                     files.push(Arc::new(FeadersFile::new(abs.as_path().to_str().unwrap())));
-                    continue
+                    continue;
                 }
             }
         }
@@ -156,6 +167,22 @@ fn unwrap_string(string: &Yaml) -> String {
     String::from(string.as_str().unwrap_or(""))
 }
 
+fn unwrap_collection<T, K>(item: &Yaml, mapper: &Fn(&Yaml) -> K) -> T
+    where T: FromIterator<K>
+{
+    item.as_vec()
+        .unwrap()
+        .iter()
+        .map(|x| mapper(x))
+        .collect::<T>()
+}
+
+fn unwrap_string_collection<T>(item: &Yaml) -> T
+    where T: FromIterator<String>
+{
+    unwrap_collection(item, &unwrap_string)
+}
+
 fn load_settings(file: &str) -> IoResult<Settings> {
     let mut f = try!(File::open(file));
     let mut s = String::new();
@@ -164,30 +191,27 @@ fn load_settings(file: &str) -> IoResult<Settings> {
     let docs = YamlLoader::load_from_str(&s).unwrap();
     let doc = &docs[0];
 
-    let ignored: HashSet<String> = doc["glibc"].as_vec()
-                                    .unwrap()
-                                    .iter()
-                                    .map(|x| unwrap_string(x))
-                                    .collect::<HashSet<_>>();
+    let ignored: HashSet<String> = unwrap_string_collection(&doc["glibc"]);
+    let paths: Vec<String> = unwrap_string_collection(&doc["paths"]);
 
-    let paths = doc["paths"].as_vec()
-                 .unwrap()
-                 .iter()
-                 .map(|x| unwrap_string(x))
-                 .collect::<Vec<_>>();
-
-    Ok(Settings { ignored: ignored, 
-                  repository: Repository {
-                      name: unwrap_string(&doc["repository"]["title"]),
-                      version: unwrap_string(&doc["repository"]["version"]),
-                      arch: unwrap_string(&doc["repository"]["arch"]) },
-                   paths: paths
+    Ok(Settings {
+        ignored: ignored,
+        repository: Repository {
+            name: unwrap_string(&doc["repository"]["title"]),
+            version: unwrap_string(&doc["repository"]["version"]),
+            arch: unwrap_string(&doc["repository"]["arch"]),
+        },
+        paths: paths,
     })
 }
 
-fn find_files(workers: usize, verbose: bool, deduplicate: bool, anchor: &Arc<String>, 
-              filters: &Arc<ImportPathFilters>, files: &mut [Arc<FeadersFile>]) 
-    -> mpsc::Receiver<Arc<FeadersFile>> {
+fn find_files(workers: usize,
+              verbose: bool,
+              deduplicate: bool,
+              anchor: &Arc<String>,
+              filters: &Arc<ImportPathFilters>,
+              files: &mut [Arc<FeadersFile>])
+              -> mpsc::Receiver<Arc<FeadersFile>> {
 
     let pool = ThreadPool::new(workers);
     let (tx, rx) = mpsc::channel();
@@ -195,14 +219,14 @@ fn find_files(workers: usize, verbose: bool, deduplicate: bool, anchor: &Arc<Str
     for rf in files {
         let (mut file, path, filters, tx) = cloned![rf, anchor, filters, tx];
 
-        pool.execute(move|| {
+        pool.execute(move || {
             match Arc::make_mut(&mut file).process(verbose, deduplicate, &path, &filters) {
                 Ok(count) => {
                     if count > 0 {
                         tx.send(file).unwrap();
                     }
-                },
-                Err(e) => { panic!(e.to_string()) }
+                }
+                Err(e) => panic!(e.to_string()),
             }
         });
     }
@@ -210,9 +234,12 @@ fn find_files(workers: usize, verbose: bool, deduplicate: bool, anchor: &Arc<Str
     rx
 }
 
-fn find_packages(file: Arc<FeadersFile>, paths: &[String], searched: &mut HashSet<String>,
-                 found: &mut HashSet<String>, context: *mut HifContext) 
-    -> u32 {
+fn find_packages(file: Arc<FeadersFile>,
+                 paths: &[String],
+                 searched: &mut HashSet<String>,
+                 found: &mut HashSet<String>,
+                 context: *mut HifContext)
+                 -> u32 {
     let mut queries = 0;
     for header in &file.headers {
         if !searched.insert(header.clone()) {
@@ -222,12 +249,10 @@ fn find_packages(file: Arc<FeadersFile>, paths: &[String], searched: &mut HashSe
         for prefix in paths {
             let full_path = prefix.clone() + header;
 
-            let packages = unsafe {
-                find_file(context, full_path.as_str())
-            };
+            let packages = unsafe { find_file(context, full_path.as_str()) };
 
             queries += 1;
-            
+
             let mut skip = false;
             for pkg in packages {
                 let pkgc = pkg.clone();
@@ -240,7 +265,7 @@ fn find_packages(file: Arc<FeadersFile>, paths: &[String], searched: &mut HashSe
             if skip {
                 break;
             }
-       }
+        }
     }
 
     queries
@@ -251,17 +276,15 @@ fn main() {
     let program = args[0].split('/').last().unwrap();
 
     let settings: Settings = match load_settings("config.yaml") {
-        Ok(m) => { m }
-        Err(e) => { panic!(e.to_string()) }
+        Ok(m) => m,
+        Err(e) => panic!(e.to_string()),
     };
 
-    let hif_context = unsafe { 
-        init_libhif("/etc/yum.repos.d", "/tmp/feaders")
-    };
+    let hif_context = unsafe { init_libhif("/etc/yum.repos.d", "/tmp/feaders") };
 
-    //let packages = unsafe {
+    // let packages = unsafe {
     //    dump_file_list(hif_context)
-    //};
+    // };
 
     let mut opts = Options::new();
     opts.optflag("h", "help", "prints this menu");
@@ -270,8 +293,8 @@ fn main() {
     opts.optflag("d", "deduplicate", "try to deduplicate headers");
     opts.optflag("", "version", "display version information");
     let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
-        Err(e) => { panic!(e.to_string()) }
+        Ok(m) => m,
+        Err(e) => panic!(e.to_string()),
     };
 
     if matches.opt_present("h") {
@@ -289,12 +312,14 @@ fn main() {
         let path = Arc::new(matches.free[0].clone());
         let mut items = match FileSearcher::search(&path) {
             Ok(d) => d,
-            Err(e) => { panic!(e.to_string()) }
+            Err(e) => panic!(e.to_string()),
         };
 
         let map = HashSet::from_iter(items.iter().map(|x| x.path.clone()));
-        let filters = Arc::new(ImportPathFilters { absolute: map, 
-                                                   relative: settings.ignored });
+        let filters = Arc::new(ImportPathFilters {
+            absolute: map,
+            relative: settings.ignored,
+        });
 
         let mut found = HashSet::new();
         let mut searched = HashSet::new();
@@ -302,8 +327,7 @@ fn main() {
         let rx = find_files(16, verbose, dedup, &path, &filters, &mut items);
 
         while let Ok(i) = rx.recv() {
-            queries += find_packages(i, &settings.paths, &mut searched, 
-                                     &mut found, hif_context);
+            queries += find_packages(i, &settings.paths, &mut searched, &mut found, hif_context);
         }
 
         if verbose {
